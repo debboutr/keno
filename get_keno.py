@@ -7,12 +7,8 @@ Sun Aug  7 10:10:45 PM PDT 2022
 scrape winning picks from past keno games in OR.
 """
 
-import csv
-import sqlite3
 import time
-from datetime import date
-from datetime import datetime as dt
-from datetime import timedelta
+from datetime import date, timedelta
 
 import click
 import pandas as pd
@@ -95,64 +91,36 @@ def rip_time(soup):
 
 @click.command()
 @click.option(
-    "--begin",
-    "-b",
-    default=None,
-    help="""Hour, minute and meridian of time to end search
-        \tExample: `1204AM`""",
-)
-@click.option(
-    "--end",
-    "-e",
-    default=None,
-    help="""Hour, minute and meridian of time to end search
-        \tExample: `1159PM`""",
-)
-@click.option(
     "--start-day",
     "-s",
     default=date.today() - timedelta(days=1),
-    help="""Date in ISO 8601 format YYYY-MM-DD
-            - Defaults to today""",
+    help="""Either Date in ISO 8601 format YYYY-MM-DD OR
+            Number of days to collect from yesterday.
+            - Defaults to yesterday""",
 )
 @click.option(
     "--end-day",
     "-f",
     default=date.today() - timedelta(days=1),
-    help="""Number of days to collect from `date` option
-            - Defaults to todays date""",
-)
-@click.option(
-    "--last-hour",
-    is_flag=True,
-    help="Get the result from the last hour to current time.",
-)
-@click.option(
-    "--update",
-    is_flag=True,
-    help="Get the result from the last hour to current time.",
+    help="""Date in ISO 8601 format YYYY-MM-DD
+            - Defaults to yesterday's date""",
 )
 # name of file for output / URL to POST
 # @click.argument()
-def main(begin, end, start_day, end_day, last_hour, update):
+def main(start_day, end_day):
+    """Collect keno sessions of past days. without arguments, defaults to
+    grabbing all of yesterday's wins."""
     days = None
-    if last_hour:
-        now = dt(2022, 12, 27, 0, 33)  # dt.now()
-        lh = now - timedelta(hours=1)
-        begin, end = lh.strftime("%I00%p"), lh.strftime("%I59%p")
-        # lh = (dt.now() - timedelta(hours=1)).hour
-        times = format_time(begin, end)
-        days = [lh]
-    if begin:
-        # this needs to get split into hours of 2
-        times = format_time(begin, end)
-    else:
-        times = get_times()
+    times = get_times()
     if start_day != end_day:
-        start_day = date.fromisoformat(start_day)
         end_day = date.fromisoformat(end_day)
-        num = (end_day - start_day).days
+        if "-" in start_day:
+            start_day = date.fromisoformat(start_day)
+            num = (end_day - start_day).days
+        else:
+            num = int(start_day)
         days = [end_day - timedelta(i) for i in list(range(num + 1))]
+        days.reverse()
     elif not days:
         days = [date.fromisoformat(end_day)]
     browser, date_input, min_time, max_time = start_browser()
@@ -177,32 +145,25 @@ def main(begin, end, start_day, end_day, last_hour, update):
             for record in rip_time(soup):
                 records.append(record)
     out = pd.DataFrame(records, columns=cols)
-
     out["datetime"] = pd.to_datetime(
         out.date + " " + out.time, format="%m/%d/%Y %I:%M %p"
     )
     out["winners"] = out.apply(lambda x: "!".join(x[6:-1].astype(str)), axis=1)
     out["posix"] = out.datetime.apply(lambda x: int(x.timestamp()))
 
-    out = out[["datetime", "UID", "posix", "powerball", "multiplier", "winners"]]
-    if not update:
-        d = day.strftime("%-d_%-m_%Y")
-        out.sort_values("datetime").to_csv(
-            f"~/code/gametheory/daily_data/{d}.csv", index=False
-        )
-        todo = pd.read_csv("~/code/gametheory/todos.csv")
-        todo.datetime = pd.to_datetime(todo.datetime, format="%Y-%m-%d %H:%M:%S")
-        tot = pd.concat([todo, out])
-        tot.sort_values("datetime", inplace=True)
-        assert (len(todo) + len(out)) == len(tot)
-        tot.to_csv("~/code/gametheory/todos.csv", index=False)
-    if update:
-        conn = sqlite3.connect("check.db")
-        old = pd.read_sql("select * from keno;", conn).set_index("UID")
-        out.set_index("UID", inplace=True)
-        out = pd.concat([old, out])
-        out = out[~out.index.duplicated()]
-        out.to_sql("keno", conn, index=True, index_label="UID", if_exists="replace")
+    out = out[
+        ["datetime", "UID", "posix", "powerball", "multiplier", "winners"]
+    ]
+    d = day.strftime("%-d_%-m_%Y")
+    out.sort_values("datetime").to_csv(
+        f"~/code/gametheory/daily_data/{d}.csv", index=False
+    )
+    todo = pd.read_csv("~/code/gametheory/todos.csv")
+    todo.datetime = pd.to_datetime(todo.datetime, format="%Y-%m-%d %H:%M:%S")
+    tot = pd.concat([todo, out])
+    tot.sort_values("datetime", inplace=True)
+    assert (len(todo) + len(out)) == len(tot)
+    tot.to_csv("~/code/gametheory/todos.csv", index=False)
 
     browser.quit()
 
