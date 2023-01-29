@@ -1,8 +1,8 @@
-#!/home/rick/miniconda3/envs/keno/bin/python
+#!/home/rick/.miniconda3/envs/keno/bin/python
 """
 Sun Aug  7 10:10:45 PM PDT 2022
 
--- make this a cron job
+xx make this a cron job
 
 scrape winning picks from past keno games in OR.
 """
@@ -20,6 +20,17 @@ from selenium.webdriver.firefox.options import Options
 from selenium.webdriver.firefox.service import Service
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.support.ui import WebDriverWait
+
+cols = ["date", "time", "UID",
+        "powerball", "multiplier", "bonus"]
+cols += [ f"num_{x}" for x in range(1, 21) ]
+
+kdate = "%m/%d/%Y %I:%M %p"
+
+yesterday = date.today() - timedelta(days=1)
+
+def bangit(v):
+    return "!".join(v[6:-1].astype(str))
 
 
 def to_iso(t):
@@ -88,6 +99,21 @@ def rip_time(soup):
         infos.append(num_cell + nums)
     return infos
 
+def format_records(recs: list) -> pd.DataFrame:
+
+    out = pd.DataFrame(recs, columns=cols)
+    out["datetime"] = pd.to_datetime(
+        out.date+" "+out.time, format=kdate)
+    out["winners"] = out.apply(bangit, axis=1)
+    out["posix"] = out.datetime.apply(lambda x: int(x.timestamp()))
+
+    return  out[["datetime",
+                 "UID",
+                 "posix",
+                 "powerball",
+                 "multiplier",
+                 "winners"]]
+
 
 @click.command()
 @click.option(
@@ -124,11 +150,12 @@ def main(start_day, end_day):
     elif not days:
         days = [date.fromisoformat(end_day)]
     browser, date_input, min_time, max_time = start_browser()
-    records = []
     cols = ["date", "time", "UID", "powerball", "multiplier", "bonus"] + [
         f"num_{x}" for x in range(1, 21)
     ]
+    out = pd.DataFrame()
     for day in days:
+        records = []
         print(f"{day.strftime('%-m/%-d/%Y')=}")
         date_input.clear()
         date_input.send_keys(day.strftime("%-m/%-d/%Y"))
@@ -140,29 +167,21 @@ def main(start_day, end_day):
             max_time.clear()
             max_time.send_keys(end)
             max_time.send_keys(Keys.RETURN)
-            time.sleep(1)
+            time.sleep(0.147)
             soup = BeautifulSoup(browser.page_source, "html.parser")
             for record in rip_time(soup):
                 records.append(record)
-    out = pd.DataFrame(records, columns=cols)
-    out["datetime"] = pd.to_datetime(
-        out.date + " " + out.time, format="%m/%d/%Y %I:%M %p"
-    )
-    out["winners"] = out.apply(lambda x: "!".join(x[6:-1].astype(str)), axis=1)
-    out["posix"] = out.datetime.apply(lambda x: int(x.timestamp()))
-
-    out = out[
-        ["datetime", "UID", "posix", "powerball", "multiplier", "winners"]
-    ]
-    d = day.strftime("%-d_%-m_%Y")
-    out.sort_values("datetime").to_csv(
-        f"~/code/gametheory/daily_data/{d}.csv", index=False
-    )
+        recs = format_records(records)
+        d = day.strftime("%-m_%-d_%Y")
+        recs.sort_values("datetime").to_csv(
+            f"~/code/gametheory/daily_data/{d}.csv", index=False
+        )
+        out = pd.concat([recs, out])
     todo = pd.read_csv("~/code/gametheory/todos.csv")
     todo.datetime = pd.to_datetime(todo.datetime, format="%Y-%m-%d %H:%M:%S")
     tot = pd.concat([todo, out])
     tot.sort_values("datetime", inplace=True)
-    assert (len(todo) + len(out)) == len(tot)
+    tot.drop_duplicates("datetime", inplace=True)
     tot.to_csv("~/code/gametheory/todos.csv", index=False)
 
     browser.quit()
