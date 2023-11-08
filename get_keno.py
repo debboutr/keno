@@ -1,4 +1,4 @@
-#!/home/rick/.miniconda3/envs/keno/bin/python
+#!/home/rick/code/gametheory/venv/bin/python
 """
 Sun Aug  7 10:10:45 PM PDT 2022
 
@@ -7,8 +7,9 @@ xx make this a cron job
 scrape winning picks from past keno games in OR.
 """
 
+import os
 import time
-from datetime import date, timedelta
+from datetime import date, datetime, timedelta
 
 import click
 import pandas as pd
@@ -17,40 +18,27 @@ from selenium import webdriver
 from selenium.webdriver.common.by import By
 from selenium.webdriver.common.keys import Keys
 from selenium.webdriver.firefox.options import Options
-from selenium.webdriver.firefox.service import Service
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.support.ui import WebDriverWait
 
-cols = ["date", "time", "UID",
-        "powerball", "multiplier", "bonus"]
-cols += [ f"num_{x}" for x in range(1, 21) ]
+cwd = os.getcwd()
+cols = ["date", "time", "UID", "powerball", "multiplier", "bonus"]
+cols += [f"num_{x}" for x in range(1, 21)]
 
 kdate = "%m/%d/%Y %I:%M %p"
 
 yesterday = date.today() - timedelta(days=1)
 
+
 def bangit(v):
     return "!".join(v[6:-1].astype(str))
 
 
-def to_iso(t):
-    s = 2
-    return t[:s] + ":" + t[s:-s] + " " + t[-s:]
-
-
-def format_time(b, e):
-    return [(to_iso(b), to_iso(e))]
-
-
 def get_times():
-    times = []
-    early = list(range(2, 13, 2))
-    early.insert(0, early.pop())
-    late = list(range(1, 12, 2))
-    for m in ["AM", "PM"]:
-        for x, y in zip(early, late):
-            times.append((f"{x}:00 {m}", f"{y}:59 {m}"))
-    return times
+    hrs = zip([12, 2, 4, 6, 8, 10], [1, 3, 5, 7, 9, 11])
+    return [
+        (f"{top}:00 {m}", f"{btm}:59 {m}") for top, btm in hrs for m in ["AM", "PM"]
+    ]
 
 
 def get_by_id(name, driver):
@@ -68,9 +56,7 @@ def start_browser():
     print("starting browser")
     options = Options()
     options.headless = True
-    # service = Service("/app/geckodriver")
-    service = Service("/home/rick/.local/bin/geckodriver")
-    browser = webdriver.Firefox(options=options, service=service)
+    browser = webdriver.Firefox(options=options)
     kenoURL = "https://www.oregonlottery.org/keno/winning-numbers/"
     browser.get(kenoURL)
     date_input = get_by_id("date-min", browser)
@@ -99,20 +85,15 @@ def rip_time(soup):
         infos.append(num_cell + nums)
     return infos
 
+
 def format_records(recs: list) -> pd.DataFrame:
 
     out = pd.DataFrame(recs, columns=cols)
-    out["datetime"] = pd.to_datetime(
-        out.date+" "+out.time, format=kdate)
+    out["datetime"] = pd.to_datetime((out.date + " " + out.time), format=kdate)
     out["winners"] = out.apply(bangit, axis=1)
     out["posix"] = out.datetime.apply(lambda x: int(x.timestamp()))
 
-    return  out[["datetime",
-                 "UID",
-                 "posix",
-                 "powerball",
-                 "multiplier",
-                 "winners"]]
+    return out[["datetime", "UID", "posix", "powerball", "multiplier", "winners"]]
 
 
 @click.command()
@@ -131,11 +112,20 @@ def format_records(recs: list) -> pd.DataFrame:
     help="""Date in ISO 8601 format YYYY-MM-DD
             - Defaults to yesterday's date""",
 )
+@click.option(
+    "--last-day",
+    "-l",
+    default=False,
+    is_flag=True,
+    help="""Finds last day of 'todos.csv', starts there""",
+)
 # name of file for output / URL to POST
 # @click.argument()
-def main(start_day, end_day):
+def main(start_day, end_day, last_day):
+
     """Collect keno sessions of past days. without arguments, defaults to
     grabbing all of yesterday's wins."""
+
     days = None
     times = get_times()
     if start_day != end_day:
@@ -147,42 +137,46 @@ def main(start_day, end_day):
             num = int(start_day)
         days = [end_day - timedelta(i) for i in list(range(num + 1))]
         days.reverse()
+    elif last_day:
+        todo = pd.read_csv(f"{cwd}/todos.csv")
+        end_day = date.fromisoformat(end_day)
+        start_day = date.fromisoformat(todo.iloc[-1].datetime.split()[0]) + timedelta(1)
+        num = (end_day - start_day).days
+        days = [end_day - timedelta(i) for i in list(range(num + 1))]
+        days.reverse()
     elif not days:
         days = [date.fromisoformat(end_day)]
     browser, date_input, min_time, max_time = start_browser()
-    cols = ["date", "time", "UID", "powerball", "multiplier", "bonus"] + [
-        f"num_{x}" for x in range(1, 21)
-    ]
     out = pd.DataFrame()
     for day in days:
         records = []
-        print(f"{day.strftime('%-m/%-d/%Y')=}")
+        dayt = day.strftime("%-m/%-d/%Y")
+        print(dayt)
         date_input.clear()
-        date_input.send_keys(day.strftime("%-m/%-d/%Y"))
+        date_input.send_keys(dayt)
         date_input.send_keys(Keys.RETURN)
         browser.find_element(By.XPATH, "//body").click()
+        time.sleep(1.347)
         for start, end in times:
             min_time.clear()
             min_time.send_keys(start)
             max_time.clear()
             max_time.send_keys(end)
             max_time.send_keys(Keys.RETURN)
-            time.sleep(0.147)
+            time.sleep(1.347)
             soup = BeautifulSoup(browser.page_source, "html.parser")
             for record in rip_time(soup):
                 records.append(record)
         recs = format_records(records)
         d = day.strftime("%-m_%-d_%Y")
-        recs.sort_values("datetime").to_csv(
-            f"~/code/gametheory/daily_data/{d}.csv", index=False
-        )
+        recs.sort_values("datetime").to_csv(f"{cwd}/daily_data/{d}.csv", index=False)
         out = pd.concat([recs, out])
-    todo = pd.read_csv("~/code/gametheory/todos.csv")
+    todo = pd.read_csv(f"{cwd}/todos.csv")
     todo.datetime = pd.to_datetime(todo.datetime, format="%Y-%m-%d %H:%M:%S")
     tot = pd.concat([todo, out])
     tot.sort_values("datetime", inplace=True)
     tot.drop_duplicates("datetime", inplace=True)
-    tot.to_csv("~/code/gametheory/todos.csv", index=False)
+    tot.to_csv(f"{cwd}/todos.csv", index=False)
 
     browser.quit()
 
