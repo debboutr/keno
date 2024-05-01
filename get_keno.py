@@ -55,7 +55,7 @@ def get_by_id(name, driver):
 def start_browser():
     print("starting browser")
     options = Options()
-    options.headless = True
+    options.add_argument("-headless")
     browser = webdriver.Firefox(options=options)
     kenoURL = "https://www.oregonlottery.org/keno/winning-numbers/"
     browser.get(kenoURL)
