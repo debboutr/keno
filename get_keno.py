@@ -29,8 +29,9 @@ kdate = "%m/%d/%Y %I:%M %p"
 
 yesterday = date.today() - timedelta(days=1)
 
-
+# lambda v: "!".join(v[6:-1].astype(str))
 def bangit(v):
+    __import__('pdb').set_trace()
     return "!".join(v[6:-1].astype(str))
 
 
@@ -40,6 +41,17 @@ def get_times():
         (f"{top}:00 {m}", f"{btm}:59 {m}") for top, btm in hrs for m in ["AM", "PM"]
     ]
 
+
+def get_last_date(file, how_many_last_lines=2):
+    with open(file, 'r') as file:
+        end_of_file = file.seek(0,2)
+        file.seek(end_of_file)             
+        for num in range(end_of_file+1):            
+            file.seek(end_of_file - num)    
+            last_line = file.read()
+            if last_line.count('\n') == how_many_last_lines: 
+                iso_date = last_line.strip("\n").split(",")[0].split()[0]
+                return date.fromisoformat(iso_date) + timedelta(1)
 
 def get_by_id(name, driver):
     return WebDriverWait(driver, 20).until(
@@ -138,9 +150,8 @@ def main(start_day, end_day, last_day):
         days = [end_day - timedelta(i) for i in list(range(num + 1))]
         days.reverse()
     elif last_day:
-        todo = pd.read_csv(f"{cwd}/todos.csv")
         end_day = date.fromisoformat(end_day)
-        start_day = date.fromisoformat(todo.iloc[-1].datetime.split()[0]) + timedelta(1)
+        start_day = get_last_date(f"{cwd}/todos.csv")
         num = (end_day - start_day).days
         days = [end_day - timedelta(i) for i in list(range(num + 1))]
         days.reverse()
@@ -151,7 +162,6 @@ def main(start_day, end_day, last_day):
     for day in days:
         records = []
         dayt = day.strftime("%-m/%-d/%Y")
-        print(dayt)
         date_input.clear()
         date_input.send_keys(dayt)
         date_input.send_keys(Keys.RETURN)
@@ -168,6 +178,7 @@ def main(start_day, end_day, last_day):
             for record in rip_time(soup):
                 records.append(record)
         recs = format_records(records)
+        print(dayt, f"{len(recs)=}")
         d = day.strftime("%-m_%-d_%Y")
         recs.sort_values("datetime").to_csv(f"{cwd}/daily_data/{d}.csv", index=False)
         out = pd.concat([recs, out])
@@ -177,7 +188,6 @@ def main(start_day, end_day, last_day):
     tot.sort_values("datetime", inplace=True)
     tot.drop_duplicates("datetime", inplace=True)
     tot.to_csv(f"{cwd}/todos.csv", index=False)
-
     browser.quit()
 
 
