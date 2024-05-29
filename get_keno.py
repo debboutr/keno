@@ -29,9 +29,7 @@ kdate = "%m/%d/%Y %I:%M %p"
 
 yesterday = date.today() - timedelta(days=1)
 
-# lambda v: "!".join(v[6:-1].astype(str))
 def bangit(v):
-    __import__('pdb').set_trace()
     return "!".join(v[6:-1].astype(str))
 
 
@@ -102,7 +100,7 @@ def format_records(recs: list) -> pd.DataFrame:
 
     out = pd.DataFrame(recs, columns=cols)
     out["datetime"] = pd.to_datetime((out.date + " " + out.time), format=kdate)
-    out["winners"] = out.apply(bangit, axis=1)
+    out["winners"] = out.apply(lambda v: "!".join(v[6:-1].astype(str)), axis=1)
     out["posix"] = out.datetime.apply(lambda x: int(x.timestamp()))
 
     return out[["datetime", "UID", "posix", "powerball", "multiplier", "winners"]]
