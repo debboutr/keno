@@ -1,0 +1,5 @@
+venv/
+daily_data/
+mydatabase.*
+requirements.txt.selenium
+db.duckdb

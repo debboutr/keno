@@ -1,0 +1,10 @@
+venv/
+app/__pycache__
+app/mydatabase.db
+mydatabase.*
+requirements.txt.selenium
+todos.csv
+db.duckdb
+daily_data/
+foo.py
+game.py

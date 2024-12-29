@@ -1,0 +1,39 @@
+<html>
+<head>
+    <title>Item Details</title>
+    <link href="{{ url_for('static', path='/styles.css') }}" rel="stylesheet">
+</head>
+<body>
+    <h1><a href="{{ url_for('read_item', id=id) }}">Item ID: {{ id }}</a></h1>
+
+    <div class="parent">
+      {% for k, v in charge.items() %}
+      {% if v.data.0["11"] %}
+
+      <p>{{ k }} || {{ v.data.0["11"]["color"] }}</p>
+      {% endif %}
+      {% endfor %}
+    </div>
+    <div class="parent">
+      {% for _ in range(8) %}
+        {% for _ in range(10) %}
+        <svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
+          {% for size, color in values %}
+            <circle r="{{ 63 - size }}%" cx="50%" cy="50%" fill="{{ color }}" />
+          {% endfor %}
+          <text 
+          x="50%" 
+          y="50%" 
+          text-anchor="middle" 
+          alignment-baseline="middle" 
+          font-weight="bold"
+          font-size="22"
+          fill="#21918c">
+          0
+          </text>
+        </svg>
+        {% endfor %}
+      {% endfor %}
+    </div>
+</body>
+</html>

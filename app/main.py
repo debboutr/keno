@@ -80,6 +80,8 @@ def read_heroes(
     return charge
 
 """
+transform to this???
+
 { records: {
     highcount:xxx,
     lowcount:xxx,
