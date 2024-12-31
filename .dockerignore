@@ -3,3 +3,9 @@ daily_data/
 mydatabase.*
 requirements.txt.selenium
 db.duckdb
+.git
+foo.py
+game.py
+get_keno.py
+.gitignore
+todos.csv

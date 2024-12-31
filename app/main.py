@@ -37,6 +37,30 @@ app.mount("/static", StaticFiles(directory="app/static"), name="static")
 
 templates = Jinja2Templates(directory="app/templates")
 
+
+def repare (records):
+    subsets = len(records), len(records) // 4, len(records) // 10
+    divs = ("HIGH", "MID", "LOW")
+    print(f"{subsets=}")
+    tot = {"stats": {}, "numbers": []}
+    keeper = {str(num): {j: None for j in divs} for num in range(1, 81)}
+    # print(f"{len(data)=}")
+    for epoch, subset in zip(divs, subsets):
+        free = "!".join([x for x in records[:subset]])
+        these = free.split("!")
+        todos = dict(Counter(these).most_common())
+        l = []
+        for rank, key in enumerate(todos.keys()):
+            print(f"{todos[key]=}")
+            print(f"{len(these)=}")
+            pct = f"{(todos[key] / len(these)) * 100}"
+            good = dict(percent=pct, rank=rank, color=color_ramp[rank], sum=todos[key])
+            keeper[key][epoch] = good
+
+    print(f"{subsets=}")
+    tot["numbers"].append(keeper)
+    return tot
+
 def prepare (records):
     l = list()
     these = records.split("!")
@@ -45,6 +69,20 @@ def prepare (records):
         pct = f"{(todos[key] / len(records)) * 100}"
         l.append({key: dict(percent=pct, rank=rank, color=color_ramp[rank], sum=todos[key])})
     return l
+
+
+@app.get("/")
+def index(
+    session: SessionDep,
+) -> dict:
+    t = datetime.now() - timedelta(weeks=4)
+    print(f"{t=}")
+    start = timer()
+    heroes = session.exec(select(Keno).where(Keno.DrawDateTime > t).limit(1000))
+    records = [hero.WinningNumbers for hero in heroes]
+    data = repare(records)
+    return data
+
 
 @app.get("/heroes/")
 def read_heroes(
@@ -82,35 +120,22 @@ def read_heroes(
 """
 transform to this???
 
-{ records: {
+{ stats: {
     highcount:xxx,
     lowcount:xxx,
-    midcount:xxx}
-  data: [
-    {high: {
-        number: {
-          percent: xxx,
-          rank: xxx,
-          color, "#aaa",
-          sum: xxx
+    midcount:xxx},
+  numbers: [
+    {"01": {
+        high: { percent: xxx, rank: xxx, color, "#aaa", sum: xxx },
+        mid: { percent: xxx, rank: xxx, color, "#aaa", sum: xxx },
+        low: { percent: xxx, rank: xxx, color, "#aaa", sum: xxx }
         }
-    }
-    mid: {
-        number: {
-          percent: xxx,
-          rank: xxx,
-          color, "#aaa",
-          sum: xxx
+    },
+    {"02": {
+        high: { percent: xxx, rank: xxx, color, "#aaa", sum: xxx },
+        mid: { percent: xxx, rank: xxx, color, "#aaa", sum: xxx },
+        low: { percent: xxx, rank: xxx, color, "#aaa", sum: xxx }
         }
-    }
-    low: {
-        number: {
-          percent: xxx,
-          rank: xxx,
-          color, "#aaa",
-          sum: xxx
-        }
-    }
     },
   ]
 }
