@@ -41,7 +41,7 @@ templates = Jinja2Templates(directory="app/templates")
 def repare (records):
     subsets = len(records), len(records) // 4, len(records) // 10
     divs = ("HIGH", "MID", "LOW")
-    print(f"{subsets=}")
+    # print(f"{subsets=}")
     tot = {"stats": {}, "numbers": []}
     keeper = {str(num): {j: None for j in divs} for num in range(1, 81)}
     # print(f"{len(data)=}")
@@ -51,13 +51,13 @@ def repare (records):
         todos = dict(Counter(these).most_common())
         l = []
         for rank, key in enumerate(todos.keys()):
-            print(f"{todos[key]=}")
-            print(f"{len(these)=}")
+            # print(f"{todos[key]=}")
+            # print(f"{len(these)=}")
             pct = f"{(todos[key] / len(these)) * 100}"
             good = dict(percent=pct, rank=rank, color=color_ramp[rank], sum=todos[key])
             keeper[key][epoch] = good
 
-    print(f"{subsets=}")
+    # print(f"{subsets=}")
     tot["numbers"].append(keeper)
     return tot
 
@@ -71,17 +71,14 @@ def prepare (records):
     return l
 
 
-@app.get("/")
-def index(
-    session: SessionDep,
-) -> dict:
+@app.get("/", response_class=HTMLResponse)
+def index(request: Request, session: SessionDep):
     t = datetime.now() - timedelta(weeks=4)
-    print(f"{t=}")
-    start = timer()
-    heroes = session.exec(select(Keno).where(Keno.DrawDateTime > t).limit(1000))
+    heroes = session.exec(select(Keno).where(Keno.DrawDateTime > t))
     records = [hero.WinningNumbers for hero in heroes]
     data = repare(records)
-    return data
+    return templates.TemplateResponse(
+            request=request, name="item.html", context={"charge": data})
 
 
 @app.get("/heroes/")
@@ -117,77 +114,15 @@ def read_heroes(
     print(f"{len(out)=}")
     return charge
 
-"""
-transform to this???
-
-{ stats: {
-    highcount:xxx,
-    lowcount:xxx,
-    midcount:xxx},
-  numbers: [
-    {"01": {
-        high: { percent: xxx, rank: xxx, color, "#aaa", sum: xxx },
-        mid: { percent: xxx, rank: xxx, color, "#aaa", sum: xxx },
-        low: { percent: xxx, rank: xxx, color, "#aaa", sum: xxx }
-        }
-    },
-    {"02": {
-        high: { percent: xxx, rank: xxx, color, "#aaa", sum: xxx },
-        mid: { percent: xxx, rank: xxx, color, "#aaa", sum: xxx },
-        low: { percent: xxx, rank: xxx, color, "#aaa", sum: xxx }
-        }
-    },
-  ]
-}
-"""
 
 @app.get("/items/{id}", response_class=HTMLResponse)
 async def read_item(request: Request,
                     session: SessionDep,
                     id: str):
     t = datetime.now() - timedelta(weeks=4)
+    print(f"{t=}")
     start = timer()
-    heroes = session.exec(select(Keno).where(Keno.DrawDateTime > t))
+    heroes = session.exec(select(Keno).where(Keno.DrawDateTime > t).limit(1000))
     records = [hero.WinningNumbers for hero in heroes]
-    out = "!".join(records)
-    subsets = len(records) // 4, len(records) // 10
-    data=prepare(out) # 80 numbers of len
-    charge = {"HIGH": dict(records=len(out), data=data)}
-    for epoch, subset in zip(("MID", "LOW"), subsets):
-        data = prepare("!".join([x for x in records[:subset]]))
-        charge[epoch] = dict(records=subset, data=data)
-    
-    
-    values = [
-            (45,"red"),
-            (35,"cyan"),
-            (25, "yellow"),
-            (15,"blue"),
-            ]
-    values.reverse()
-    print(f"{values=}")
-    num = ["a"] * 10
-    return templates.TemplateResponse(
-            request=request, name="item.html", context={"num": num, "id": id,
-                                                        "values": values,
-                                                        "charge": charge}
-    )
-
-# def count_query(q: list):
-#     recs = [x[0].split("!") for x in q]
-#     return Counter([nums for rec in recs for nums in rec])
-#
-# @app.get("/", response_model=dict)
-# def three_ball(lo: int = 100, md: int = 500, hi: int = 1000, db: Session = Depends(get_db)):
-#
-#     query = ("SELECT string_agg(winners, '!')"
-#             " FROM pulls"
-#             " GROUP BY winners"
-#             " ORDER BY any_value(datetime) DESC"
-#             " LIMIT {};")
-#
-#     low = count_query(db.execute(text(query.format(lo))).fetchall())
-#     med = count_query(db.execute(text(query.format(md))).fetchall())
-#     high = count_query(db.execute(text(query.format(hi))).fetchall())
-#     print(db.execute(text(query.format(lo))).fetchall()[:3])
-#     return dict(low=low.most_common()[-3:], med=med.most_common()[-3:], high=high.most_common()[-3:])
+    data = repare(records)
+    return data

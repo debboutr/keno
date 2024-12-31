@@ -7,7 +7,7 @@ import matplotlib.colors as mcolors
 
 # Create a colormap object
 # cmap = plt.cm.get_cmap('viridis')  # Replace 'viridis' with any colormap name
-cmap = plt.cm.get_cmap('bwr')  # Spectral
+cmap = plt.cm.get_cmap('coolwarm')  # Spectral
 # Get colors from the colormap
 colors = cmap(np.linspace(0, 1, 80))  # Get 10 evenly spaced colors
 # translate to hex color
