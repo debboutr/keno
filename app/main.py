@@ -75,10 +75,9 @@ def prepare (records):
 def index(request: Request, session: SessionDep):
     t = datetime.now() - timedelta(weeks=4)
     heroes = session.exec(select(Keno).where(Keno.DrawDateTime > t))
-    records = [hero.WinningNumbers for hero in heroes]
-    data = repare(records)
-    return templates.TemplateResponse(
-            request=request, name="item.html", context={"charge": data})
+    data = repare([hero.WinningNumbers for hero in heroes])
+    context = {"color_ramp": color_ramp,"data": data}
+    return templates.TemplateResponse(request=request, name="item.html", context=context)
 
 
 @app.get("/heroes/")

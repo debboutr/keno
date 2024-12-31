@@ -27,10 +27,23 @@ html, body {
   /* margin: 1em; */
   /* grid-template-rows: repeat(8, 1fr); */
 }
+.color-container {
+  display: grid;
+  grid-template-columns: repeat(80, 1fr);
+  margin: 1em;
+}
+.color {
+  width: 10px;
+  height: 10px;
+}
 
+.number {
+  border-radius: 15px;
+}
 .outer {
   padding: 1rem;
   margin: auto;
+  font-size: 2rem;
 }
 .middle {
   padding: 4px;
