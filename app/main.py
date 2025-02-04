@@ -73,7 +73,7 @@ def prepare (records):
 
 @app.get("/", response_class=HTMLResponse)
 def index(request: Request, session: SessionDep):
-    t = datetime.now() - timedelta(weeks=4)
+    t = datetime.now() - timedelta(weeks=4) # TODO: hard-coded time
     heroes = session.exec(select(Keno).where(Keno.DrawDateTime > t))
     data = repare([hero.WinningNumbers for hero in heroes])
     context = {"color_ramp": color_ramp,"data": data}
