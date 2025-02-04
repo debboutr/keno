@@ -11,18 +11,20 @@
     {% endfor %}
     </div>
 
+    <div class="container">
     <div class="parent">
       {% for v in data.numbers %}
         {% for num, stats in v.items() %}
-        <div class="number outer" style="background-color:{{ stats.HIGH.color }}">
-          <div class="number middle" style="background-color:{{ stats.MID.color }}">
-            <div class="number middle" style="background-color:{{ stats.LOW.color }}">
+        <div class="box outer" style="border-color:{{ stats.HIGH.color }}">
+          <div class="box middle" style="border-color:{{ stats.MID.color }}">
+            <div class="box middle" style="border-color:{{ stats.LOW.color }}">
               {{ num }}
             </div>
           </div>
         </div>
         {% endfor %}
       {% endfor %}
+    </div>
     </div>
 
   </body>
