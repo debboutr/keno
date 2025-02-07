@@ -1,6 +1,6 @@
 <html>
   <head>
-    <title>Item Details</title>
+    <title>🚀KENO🚀</title>
     <link href="{{ url_for('static', path='/styles.css') }}" rel="stylesheet">
   </head>
   <body>
@@ -15,10 +15,10 @@
     <div class="parent">
       {% for v in data.numbers %}
         {% for num, stats in v.items() %}
-        <div class="box outer" style="border-color:{{ stats.HIGH.color }}">
-          <div class="box middle" style="border-color:{{ stats.MID.color }}">
-            <div class="box middle" style="border-color:{{ stats.LOW.color }}">
-              {{ num }}
+        <div class="box outer" style="background-color:{{ stats.HIGH.color }}">
+          <div class="box middle" style="background-color:{{ stats.MID.color }}">
+            <div class="box middle" style="background-color:{{ stats.LOW.color }}">
+              {{ num.rjust(2, "0") }}
             </div>
           </div>
         </div>

@@ -1,14 +1,15 @@
 import matplotlib.pyplot as plt
 import numpy as np
 import matplotlib.colors as mcolors
+from matplotlib import colormaps
 
 # Get a list of available colormaps
 # print(plt.colormaps())
 
 # Create a colormap object
-# cmap = plt.cm.get_cmap('viridis')  # Replace 'viridis' with any colormap name
-cmap = plt.cm.get_cmap('coolwarm')  # Spectral
+cmap = colormaps['cividis_r']  # Spectral
 # Get colors from the colormap
-colors = cmap(np.linspace(0, 1, 80))  # Get 10 evenly spaced colors
+colors = cmap(np.linspace(0, 1, 80)) * np.array([255, 255, 255, 0.5])
 # translate to hex color
-color_ramp = [mcolors.to_hex(color) for color in colors][::-1]
+# color_ramp = [mcolors.to_hex(color) for color in colors][::-1]
+color_ramp = [f"rgba{tuple(c.tolist())}" for c in colors]
