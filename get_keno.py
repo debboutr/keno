@@ -48,7 +48,8 @@ def retreive():
                 """SELECT * FROM keno
                 ORDER BY DrawDateTime
                 DESC LIMIT 1""", conn)
-        dates = gather_dates(df.loc[0].DrawDateTime)
+        last_record = df.loc[0]
+        dates = gather_dates(last_record.DrawDateTime)
         if not dates:
             click.echo("You're all up to date!!!")
             return
@@ -57,27 +58,11 @@ def retreive():
             records_collected = scrape_keno(day)
             print(f"{day=} || {len(records_collected)=}")
             tbl = pd.concat([tbl, records_collected])
-        tbl.to_sql('poopy', conn,
+        tbl = tbl[tbl.DrawNumber > last_record.DrawNumber]
+        tbl.to_sql('keno', conn,
                    if_exists='append', index=False)
+        print(f"Records added: {len(tbl)=}")
         conn.commit()
-        sql = """INSERT INTO keno (
-                    DrawDateTime,
-                    DrawNumber,
-                    BullsEye,
-                    Multiplier,
-                    WinningNumbers)
-                SELECT DrawDateTime,
-                    DrawNumber,
-                    BullsEye,
-                    Multiplier,
-                    WinningNumbers
-                FROM poopy t
-                WHERE NOT EXISTS
-                    (SELECT 1 FROM keno f
-                     WHERE t.DrawNumber = f.DrawNumber)"""
-        cursor = conn.cursor()
-        cursor.execute(sql)
-        cursor.execute("""DROP TABLE poopy""")
 
 
 if __name__ == "__main__":
