@@ -57,8 +57,8 @@ def repare (records):
             good = dict(percent=pct, rank=rank, color=color_ramp[rank], sum=todos[key])
             keeper[key][epoch] = good
 
-    # print(f"{subsets=}")
     tot["numbers"].append(keeper)
+    print(f"{tot=}")
     return tot
 
 def prepare (records):
