@@ -12,7 +12,7 @@
 -- look for common hours
 """
 
-from collections import OrderedDict
+from collections import Counter, OrderedDict
 from sqlite3 import PARSE_COLNAMES, PARSE_DECLTYPES, connect
 
 import numpy as np
@@ -74,8 +74,27 @@ def order_indexes():
         conn,
     )
 
+
 win = list(sorted_dict.keys())[-3:]
-win
+
+
+def squeal():
+    detect_types = PARSE_DECLTYPES | PARSE_COLNAMES
+    with connect("mydatabase.db", detect_types=detect_types) as conn:
+        df = pd.read_sql_query(
+            """SELECT * FROM keno
+                ORDER BY DrawDateTime
+                DESC LIMIT 1200""",
+            conn,
+        )
+        df = pd.read_sql_query(
+            """SELECT * FROM keno
+                WHERE DrawDateTime < '2025-04-06'
+                ORDER BY DrawDateTime
+                DESC LIMIT 1200""",
+            conn,
+        )
+
 
 count = 0
 for idx, row in tbl.iterrows():

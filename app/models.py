@@ -12,4 +12,3 @@ class Pull(Base):
     powerball = Column(Integer)
     multiplier = Column(String)
     winners = Column(String)
-

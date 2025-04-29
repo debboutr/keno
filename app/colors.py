@@ -1,13 +1,13 @@
+import matplotlib.colors as mcolors
 import matplotlib.pyplot as plt
 import numpy as np
-import matplotlib.colors as mcolors
 from matplotlib import colormaps
 
 # Get a list of available colormaps
 # print(plt.colormaps())
 
 # Create a colormap object
-cmap = colormaps['cividis_r']  # Spectral
+cmap = colormaps["cividis_r"]  # Spectral
 # Get colors from the colormap
 colors = cmap(np.linspace(0, 1, 80)) * np.array([255, 255, 255, 0.5])
 # translate to hex color
