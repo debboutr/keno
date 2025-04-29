@@ -73,21 +73,21 @@ def repare(records):
     # print(f"{subsets=}")
     tot = {"stats": {}, "numbers": []}
     keeper = {str(num): {j: None for j in divs} for num in range(1, 81)}
-    # print(f"{len(data)=}")
+    print(f"{keeper=}")
     for epoch, subset in zip(divs, subsets):
         free = "!".join([x for x in records[:subset]])
         these = free.split("!")
         todos = dict(Counter(these).most_common())
         l = []
+        print(f"{todos.keys()=}")
         for rank, key in enumerate(todos.keys()):
-            # print(f"{todos[key]=}")
             # print(f"{len(these)=}")
             pct = f"{(todos[key] / len(these)) * 100}"
             good = dict(percent=pct, rank=rank, color=color_ramp[rank], sum=todos[key])
             keeper[key][epoch] = good
 
     tot["numbers"].append(keeper)
-    print(f"{tot=}")
+    # print(f"{tot=}")
     return tot
 
 
@@ -123,36 +123,36 @@ def read_heroes(
 ) -> dict:
     """This is REALLY slow when selecting ALL!!"""
     t = datetime.now() - timedelta(weeks=4)
-    print(f"{t=}")
+    # print(f"{t=}")
     start = timer()
     # you might also just do a limit here on total records descending
     heroes = session.exec(select(Keno).where(Keno.DrawDateTime > t))
-    print(f"db query: {(timer() - start)=}")
+    # print(f"db query: {(timer() - start)=}")
     start = timer()
     records = [hero.WinningNumbers for hero in heroes]
-    print(f"{len(records)=}")
-    print(f"{records[0]=}")
+    # print(f"{len(records)=}")
+    # print(f"{records[0]=}")
     out = "!".join(records)
     subsets = len(records) // 4, len(records) // 10
-    print(f"{subsets=}")
+    # print(f"{subsets=}")
     data = prepare(out)  # 80 numbers of len
     charge = {"HIGH": dict(records=len(out), data=data)}
-    print(f"{len(data)=}")
+    # print(f"{len(data)=}")
     for epoch, subset in zip(("MID", "LOW"), subsets):
-        print(f"{subset=}")
-        print(f"{len(records[:subset])=}")
+        # print(f"{subset=}")
+        # print(f"{len(records[:subset])=}")
         data = prepare("!".join([x for x in records[:subset]]))
-        print(f"{len(data)=}")
+        # print(f"{len(data)=}")
         charge[epoch] = dict(records=subset, data=data)
-    print(f"prepare: {(timer() - start)=}")
-    print(f"{len(out)=}")
+    # print(f"prepare: {(timer() - start)=}")
+    # print(f"{len(out)=}")
     return charge
 
 
 @app.get("/items/{id}", response_class=HTMLResponse)
 async def read_item(request: Request, session: SessionDep, id: str):
     t = datetime.now() - timedelta(weeks=4)
-    print(f"{t=}")
+    # print(f"{t=}")
     start = timer()
     heroes = session.exec(select(Keno).where(Keno.DrawDateTime > t).limit(1000))
     records = [hero.WinningNumbers for hero in heroes]
