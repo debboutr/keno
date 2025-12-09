@@ -73,13 +73,13 @@ def repare(records):
     # print(f"{subsets=}")
     tot = {"stats": {}, "numbers": []}
     keeper = {str(num): {j: None for j in divs} for num in range(1, 81)}
-    print(f"{keeper=}")
+    # print(f"{keeper=}")
     for epoch, subset in zip(divs, subsets):
         free = "!".join([x for x in records[:subset]])
         these = free.split("!")
         todos = dict(Counter(these).most_common())
         l = []
-        print(f"{todos.keys()=}")
+        # print(f"{todos.keys()=}")
         for rank, key in enumerate(todos.keys()):
             # print(f"{len(these)=}")
             pct = f"{(todos[key] / len(these)) * 100}"
