@@ -8,7 +8,7 @@ services:
         - frontend
       labels:
         - traefik.enable=true
-        - traefik.http.routers.globe.rule=Host('globe.debbout.info')
+        - traefik.http.routers.globe.rule=Host('debbout.info')
         - traefik.http.routers.globe.entrypoint=web
       restart: unless-stopped
       volumes:
